@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <Arduino.h>
 
 const int MPU_addr = 0x68; // I2C address of the MPU6050
 
@@ -24,6 +25,9 @@ void setup() {
 
   // set analog read pin A0 as input to read data from photoresistor
   pinMode(A0, INPUT);
+
+  // Seed the random number generator
+  randomSeed(analogRead(0)); 
 }
 
 void loop(){
@@ -72,16 +76,43 @@ int main() {
   // game loop
   while(gameInProgress){
     // call function to prompt player action 
-    // action = promptAction();
+     bool action = promptAction();
     // if(action == true){
           // score++;
     // }
-    //  else{
+    // else{
       // endGame();
     // }
-
+    // displayScore();
+    
   }
+}
 
+// function to prompt new user action
+bool promptAction(){
+  // randomly generate a new action 
+  prompt = randomGenAction();
+  bool action;
+  if(prompt == "cook it"){
+    // use speaker to prompt user
+    speak("Cook It");
+    if(photoresistor == true){
+      action = true;
+    }
+    else{
+      action = false;
+    }
+  }
+  else if(prompt == "fry it"){
+    speak("Fry It");
+    if(accelerometer_x >  || accelerometer_y >  )
+  }
+}
 
-
+// function to randomly select a new action
+String randomGenAction(){
+  String options[] = {"cook it", "fry it", "place it"};
+  const int numOptions = 3;
+  int index = random(0,options);
+  return options[index];
 }
