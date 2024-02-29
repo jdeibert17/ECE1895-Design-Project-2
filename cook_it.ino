@@ -69,6 +69,7 @@ int main() {
   int score = 0;
 
   // if start button pressed, set game in progress to high and enter game loop
+  //lcd.print("Press Start to Begin");
   // if(digitalRead() == HIGH){
     //gameInProgress = true;
   //}
@@ -81,7 +82,7 @@ int main() {
           // score++;
     // }
     // else{
-      // endGame();
+        //endGame();
     // }
     // displayScore();
     
@@ -95,6 +96,7 @@ bool promptAction(){
   bool action;
   if(prompt == "cook it"){
     // use speaker to prompt user
+    //putting meat on 
     speak("Cook It");
     if(photoresistor == true){
       action = true;
@@ -103,16 +105,35 @@ bool promptAction(){
       action = false;
     }
   }
+  //Burner Placement
   else if(prompt == "fry it"){
     speak("Fry It");
     if(accelerometer_x >  || accelerometer_y >  )
+  }
+  //taking meat off
+  else if(prompt == "cool it"){
+    speak("Cool It");
+    if(phontoresistor == false){
+      action = true;
+    }
+    else{
+      action = false;
+    }
   }
 }
 
 // function to randomly select a new action
 String randomGenAction(){
-  String options[] = {"cook it", "fry it", "place it"};
-  const int numOptions = 3;
+  String options[] = {"cook it", "fry it", "place it", "cool it"};
+  const int numOptions = 4;
   int index = random(0,options);
   return options[index];
+}
+
+bool endGame(){
+  speak("Game Over");
+  lcd.print("Game Over");
+  gameInProgress = false;
+  return gameInProgress;
+
 }
