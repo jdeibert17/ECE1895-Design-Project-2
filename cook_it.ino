@@ -17,6 +17,7 @@ bool photoresistor, gameInProgress;
 unsigned long prev_time = 0;
 unsigned long action_time_limit = 10000;
 
+
 void setup() {
   // initialize lcd 
   lcd.init();
@@ -121,7 +122,7 @@ int main() {
 }
 
 // function to prompt new user action
-bool promptAction(){
+bool promptAction(bool photoresistor){
   // randomly generate a new action 
   String prompt = randomGenAction();
   bool action;
