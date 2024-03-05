@@ -122,7 +122,7 @@ int main() {
 }
 
 // function to prompt new user action
-bool promptAction(bool photoresistor){
+bool promptAction(){
   // randomly generate a new action 
   String prompt = randomGenAction();
   bool action;
