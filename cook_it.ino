@@ -87,7 +87,7 @@ int main() {
     // displayScore();
     
   }
-}
+} 
 
 // function to prompt new user action
 bool promptAction(){
