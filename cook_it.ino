@@ -120,7 +120,7 @@ int main() {
     if(score % 10 == 0 && score != 0){
       action_time_limit = action_time_limit - 100;
     }
-
+  return 0;
 }
 
 // function to prompt new user action
