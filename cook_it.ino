@@ -17,7 +17,6 @@ bool photoresistor, gameInProgress;
 unsigned long prev_time = 0;
 unsigned long action_time_limit = 10000;
 
-
 void setup() {
   // initialize lcd 
   lcd.init();
@@ -109,16 +108,19 @@ int main() {
      if(action == true){
         score++;
       }
-    else{
-      return;
-    }
+    
     displayScore(score);
+
+    // end game when score gets to 100
+    if(score == 100 || action == false)
+    gameInProgress = endGame();
+    }
 
     // decrease action timer every 10 actions completed
     if(score % 10 == 0 && score != 0){
       action_time_limit = action_time_limit - 100;
     }
-  }
+
 }
 
 // function to prompt new user action
@@ -164,6 +166,7 @@ bool promptAction(){
       action = false;
     }
   }  
+  return action;
 }
 
 
