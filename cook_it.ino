@@ -11,7 +11,12 @@ int16_t accelerometer_x, accelerometer_y, accelerometer_z;
 LiquidCrystal_I2C lcd(0x27,16,2);
 
 // photoresistor value
-bool photoresistor;
+bool photoresistor, gameInProgress;
+
+// game timer
+unsigned long prev_time = 0;
+unsigned long action_time_limit = 10000;
+
 
 void setup() {
   // initialize lcd 
@@ -77,12 +82,19 @@ void loop(){
     photoresistor = false;
   }
 
+  // check if action time limit is exceeded
+  if(millis() - prev_time >= action_time_limit){
+    // end game if action not completed before time limit
+    endGame(); 
+  }
+
+  unsigned long current_time = millis();
 }
 
 int main() {
 
   // declare variables 
-  bool gameInProgress = false;
+  gameInProgress = false;
   int score = 0;
 
   // if start button pressed, set game in progress to high and enter game loop
@@ -93,7 +105,7 @@ int main() {
   // game loop
   while(gameInProgress){
     // call function to prompt player action 
-     bool action = promptAction(photoresistor);
+     bool action = promptAction();
      if(action == true){
         score++;
       }
@@ -101,11 +113,16 @@ int main() {
       return;
     }
     displayScore(score);
+
+    // decrease action timer every 10 actions completed
+    if(score % 10 == 0 && score != 0){
+      action_time_limit = action_time_limit - 100;
+    }
   }
 }
 
 // function to prompt new user action
-bool promptAction(bool photoresistor){
+bool promptAction(){
   // randomly generate a new action 
   String prompt = randomGenAction();
   bool action;
@@ -128,12 +145,32 @@ bool promptAction(bool photoresistor){
       action = false;
     }
   }
+  else if(prompt == "cool it"){
+    // speak("Cool It");
+    if(photoresistor == false || digitalRead(A9) == LOW){
+      action = true;
+    }
+    else{
+      action = false;
+    }
+  }
+  else if(prompt == "cook it"){
+    // speak("Cook It");
+    if(digitalRead(A9) == LOW){
+      // hall sensor switched on
+      action = true;
+    }
+    else{
+      action = false;
+    }
+  }  
 }
 
+
 // function to randomly select a new action
-String randomGenAction(){
-  String options[] = {"cook it", "fry it", "place it"};
-  const int numOptions = 3;
+String randomGenAction(){ 
+  String options[] = {"cook it", "fry it", "place it", "cool it"};
+  const int numOptions = 4;
   int index = random(0,options);
   return options[index];
 }
@@ -142,6 +179,13 @@ String randomGenAction(){
 void displayScore(int score){
   char score_string[3];
   itoa(score,score_string,3);
-  lcd.print("Final score: ");
+  lcd.print("Player score: ");
   lcd.print(score_string);
+}
+
+bool endGame(){
+  gameInProgress = false; 
+  // speak("Game over");
+  lcd.print("Game Over!");
+  return gameInProgress; 
 }
