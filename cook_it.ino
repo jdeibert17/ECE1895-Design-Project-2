@@ -172,7 +172,9 @@ void displayScore(int score) {
   char score_string[3];
   itoa(score, score_string, 3);
   lcd.clear();
+  lcd.setCursor(0,0);
   lcd.print("Player score: ");
+  lcd.setCursor(0,1);
   lcd.print(score_string);
 }
 
