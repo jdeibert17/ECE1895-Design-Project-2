@@ -25,7 +25,6 @@ void setup() {
   // print message to lcd
   lcd.backlight();
   lcd.setCursor(0, 0);
-  //lcd.print("Hello, world");
 
   // Create wire and start serial connection for accelerometer data
   Wire.begin();
@@ -53,6 +52,7 @@ void setup() {
 
 void loop() {
   // wait for start button to be pressed 
+  lcd.print("Press start button");
   do{
     // if start button pressed, set game in progress to high and enter game loop
     if (digitalRead(A8) == HIGH) {
@@ -147,13 +147,6 @@ bool promptAction() {
     } else {
       action = false;
     }
-  } else if (prompt == "cool it") {
-    // speak("Cool It");
-    if (photoresistor == false || digitalRead(A9) == LOW) {
-      action = true;
-    } else {
-      action = false;
-    }
   } else if (prompt == "cook it") {
     // speak("Cook It");
     if (digitalRead(A9) == LOW) {
@@ -168,7 +161,7 @@ bool promptAction() {
 
 // function to randomly select a new action
 String randomGenAction() {
-  String options[] = { "cook it", "fry it", "place it", "cool it" };
+  String options[] = { "cook it", "fry it", "place it"};
   const int numOptions = 4;
   int index = random(numOptions);
   return options[index];
