@@ -162,7 +162,7 @@ bool promptAction() {
 // function to randomly select a new action
 String randomGenAction() {
   String options[] = { "cook it", "fry it", "place it"};
-  const int numOptions = 4;
+  const int numOptions = 3;
   int index = random(numOptions);
   return options[index];
 }
