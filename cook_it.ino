@@ -24,7 +24,9 @@ void setup() {
 
   // print message to lcd
   lcd.backlight();
-  lcd.setCursor(0, 0);
+  lcd.setCursor(1, 0);
+  lcd.clear();
+  lcd.print("Press start button");
 
   // Create wire and start serial connection for accelerometer data
   Wire.begin();
@@ -39,11 +41,11 @@ void setup() {
   // set analog read pin A0 as input to read data from photoresistor
   pinMode(A0, INPUT);
 
-  // set pin A8 as digital input for start game button
-  pinMode(A8, INPUT);
+  // set pin 2 as digital input for start game button
+  pinMode(2, INPUT);
 
-  // set pin A9 as digital input for hall switch
-  pinMode(A9, INPUT);
+  // set pin 1 as digital input for hall switch
+  pinMode(1, INPUT);
 
   // Seed the random number generator
   randomSeed(analogRead(0));
@@ -52,10 +54,10 @@ void setup() {
 
 void loop() {
   // wait for start button to be pressed 
-  lcd.print("Press start button");
+  //lcd.print("Press start button");
   do{
     // if start button pressed, set game in progress to high and enter game loop
-    if (digitalRead(A8) == HIGH) {
+    if (digitalRead(2) == HIGH) {
     gameInProgress = true;
     break;
     }
@@ -88,27 +90,14 @@ void loop() {
       delay(100);  // Delay for stability
 
       photoresistor = false;
-      // read if photoresistor is covered or not
-      if (analogRead(A0) < 700) {
-        // photoresistor covered
-        photoresistor = true;
-      } else {
-        photoresistor = false;
-      }
 
-      // check if action time limit is exceeded
-      if (millis() - prev_time >= action_time_limit) {
-        // end game if action not completed before time limit
-        gameInProgress = endGame();
-        break; // Exit the game loop
-      }
-
-      unsigned long current_time = millis();
+      unsigned long current_time = millis();      
 
       // call function to prompt player action
       bool action = promptAction();
       if (action == true) {
         score++;
+        prev_time = current_time;
       }
 
       displayScore(score);
@@ -123,18 +112,31 @@ void loop() {
       if (score % 10 == 0 && score != 0) {
         action_time_limit = action_time_limit - 100;
       }
+
+     
+
     }
   }
 }
 
 // function to prompt new user action
 bool promptAction() {
-  // randomly generate a new action
+
+    // randomly generate a new action
   String prompt = randomGenAction();
-  bool action;
+  bool action = false;
   if (prompt == "place it") {
     // use speaker to prompt user
     //speak("Place It");
+    lcd.print("place it");
+    delay(5000);
+      // read if photoresistor is covered or not
+    if (analogRead(A0) < 700) {
+       // photoresistor covered
+       photoresistor = true;
+     } else {
+       photoresistor = false;
+     }
     if (photoresistor == true) {
       action = true;
     } else {
@@ -142,6 +144,8 @@ bool promptAction() {
     }
   } else if (prompt == "fry it") {
     //speak("Fry It");
+    lcd.print("Fry It");
+    delay(5000);
     if (accelerometer_y < -700 || accelerometer_y > -300) {
       action = true;
     } else {
@@ -149,7 +153,9 @@ bool promptAction() {
     }
   } else if (prompt == "cook it") {
     // speak("Cook It");
-    if (digitalRead(A9) == LOW) {
+    lcd.print("Cook It");
+    delay(5000);
+    if (digitalRead(1) == LOW) {
       // hall sensor switched on
       action = true;
     } else {
