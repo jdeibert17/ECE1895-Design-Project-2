@@ -1,0 +1,94 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <Arduino.h>
+
+const int MPU_addr = 0x68;  // I2C address of the MPU6050
+
+// variable declaration for the x, y, and z values from the accelerometer
+float accelerometer_x, accelerometer_y, accelerometer_z;
+
+// create lcd object and initialize the address and row/column numbers
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// photoresistor value
+bool photoresistor;
+bool gameInProgress = false; // Declare gameInProgress as global
+
+// game timer
+unsigned long prev_time = 0;
+unsigned long action_time_limit = 10000;
+unsigned long delay_time = 5000;
+
+void setup() {
+  // initialize lcd
+  lcd.init();
+
+  // print message to lcd
+  lcd.backlight();
+  lcd.setCursor(1, 0);
+  lcd.clear();
+  lcd.print("Press start button");
+
+  // Create wire and start serial connection for accelerometer data
+  Wire.begin();
+  Serial.begin(9600);
+
+  // initialize accelerometer
+  Wire.beginTransmission(MPU_addr);
+  Wire.write(0x6B);  // PWR_MGMT_1 register
+  Wire.write(0);     // Wake up MPU6050
+  Wire.endTransmission(true);
+
+  // set analog read pin A0 as input to read data from photoresistor
+  pinMode(A1, INPUT);
+
+  // set pin 2 as digital input for start game button
+  pinMode(2, INPUT);
+
+  // set pin 1 as digital input for hall switch
+  pinMode(1, INPUT);
+
+  // Seed the random number generator
+  randomSeed(analogRead(0));
+
+}
+
+void loop() {
+  // wait for start button to be pressed 
+  //lcd.print("Press start button");
+  do{
+    // if start button pressed, set game in progress to high and enter game loop
+    if (digitalRead(2) == HIGH) {
+    gameInProgress = true;
+    break;
+    }
+  } while(1);
+
+  if (gameInProgress) {
+
+    while (gameInProgress) {
+      // Initialize MPU6050 accelerometer
+      Wire.beginTransmission(MPU_addr);
+      Wire.write(0x3B);  // PWR_MGMT_1 register
+      Wire.write(0);     // Wake up MPU6050
+      Wire.endTransmission(false);
+
+      // request total of 14 registers
+      Wire.requestFrom(MPU_addr, 6, true);
+
+      // read accelerometer data
+      accelerometer_x = (Wire.read() << 8 | Wire.read());
+      accelerometer_y = (Wire.read() << 8 | Wire.read());
+      accelerometer_z = (Wire.read() << 8 | Wire.read());
+      int total_accel;
+      total_accel = sqrt((accelerometer_x*accelerometer_x)+(accelerometer_y*accelerometer_y)+(accelerometer_z*accelerometer_z));
+
+      lcd.clear();
+      lcd.print(total_accel);
+      delay(500);
+      lcd.clear();
+
+    }
+  }
+}
+
