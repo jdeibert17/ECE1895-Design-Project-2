@@ -5,7 +5,7 @@
 const int MPU_addr = 0x68;  // I2C address of the MPU6050
 
 // variable declaration for the x, y, and z values from the accelerometer
-int16_t accelerometer_x, accelerometer_y, accelerometer_z;
+float accelerometer_x, accelerometer_y, accelerometer_z, total_accel;
 
 // create lcd object and initialize the address and row/column numbers
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -14,9 +14,11 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 bool photoresistor;
 bool gameInProgress = false; // Declare gameInProgress as global
 
-// game timer
-unsigned long prev_time = 0;
-unsigned long action_time_limit = 10000;
+int delay_time = 5000;
+int score = 0; // Moved score declaration here
+
+// pin for speaker
+const int speakerPin = 3;
 
 void setup() {
   // initialize lcd
@@ -26,7 +28,9 @@ void setup() {
   lcd.backlight();
   lcd.setCursor(1, 0);
   lcd.clear();
-  lcd.print("Press start button");
+  lcd.print("Let's Cook-It!");
+  lcd.setCursor(0, 1);
+  lcd.print("Press start");
 
   // Create wire and start serial connection for accelerometer data
   Wire.begin();
@@ -39,13 +43,16 @@ void setup() {
   Wire.endTransmission(true);
 
   // set analog read pin A0 as input to read data from photoresistor
-  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
 
   // set pin 2 as digital input for start game button
   pinMode(2, INPUT);
 
   // set pin 1 as digital input for hall switch
   pinMode(1, INPUT);
+
+  // set pin 3 as speaker output pin
+  pinMode(speakerPin, OUTPUT);
 
   // Seed the random number generator
   randomSeed(analogRead(0));
@@ -55,22 +62,80 @@ void setup() {
 void loop() {
   // wait for start button to be pressed 
   //lcd.print("Press start button");
-  do{
-    // if start button pressed, set game in progress to high and enter game loop
-    if (digitalRead(2) == HIGH) {
+  // if start button pressed, set game in progress to high and enter game loop
+  if (digitalRead(2) == HIGH && gameInProgress != true) {
     gameInProgress = true;
-    break;
-    }
-  } while(1);
+    score = 0;
+  }
 
   if (gameInProgress) {
     // Game logic
-    int score = 0;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Player score:");
+    lcd.print(score);
 
-    while (gameInProgress) {
+    photoresistor = false;
+
+    // call function to prompt player action
+    bool action = promptAction();
+    if (action == true) {
+      score++;
+      tone(speakerPin, 440);
+      delay(250);
+
+      noTone(speakerPin);
+      delay(100);
+    }
+
+    displayScore(score);
+
+    // end game when score gets to 99
+    if (score >= 100 || action == false) {
+      if(score >= 100){
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("You Win!");
+        lcd.setCursor(0, 1);
+        lcd.print("Play Again?");
+        gameInProgress = false;
+      }
+      gameInProgress = endGame();
+    }
+
+    // decrease action timer every 10 actions completed
+    if (score % 10 == 0 && score != 0) {
+      delay_time -= 250;
+    }
+    
+  }
+}
+
+// function to prompt new user action
+bool promptAction() {
+
+  // randomly generate a new action
+  String prompt = randomGenAction();
+  bool action = false;
+  if (prompt == "place it") {
+    // use speaker to prompt user
+    //speak("Place It");
+    lcd.setCursor(0, 1);
+    lcd.print("Place it");
+    delay(delay_time);
+      // read if photoresistor is covered or not
+    if (analogRead(A1) < 500) {
+
+      action = true;
+    } else {
+      action = false;
+    }
+  } else if (prompt == "fry it") {
+      lcd.setCursor(0, 1);
+      lcd.print("Fry It");
       // Initialize MPU6050 accelerometer
       Wire.beginTransmission(MPU_addr);
-      Wire.write(0x6B);  // PWR_MGMT_1 register
+      Wire.write(0x3B);  // PWR_MGMT_1 register
       Wire.write(0);     // Wake up MPU6050
       Wire.endTransmission(false);
 
@@ -81,80 +146,19 @@ void loop() {
       accelerometer_x = Wire.read() << 8 | Wire.read();
       accelerometer_y = Wire.read() << 8 | Wire.read();
       accelerometer_z = Wire.read() << 8 | Wire.read();
+      delay(100);
 
-      // print accelerometer values to serial monitor for debugging
-      //Serial.print("X = "); Serial.print(accelerometer_x);
-      //Serial.print(" | Y = "); Serial.print(accelerometer_y);
-      //Serial.print(" | Z = "); Serial.println(accelerometer_z);
-
-      delay(100);  // Delay for stability
-
-      photoresistor = false;
-
-      unsigned long current_time = millis();      
-
-      // call function to prompt player action
-      bool action = promptAction();
-      if (action == true) {
-        score++;
-        prev_time = current_time;
-      }
-
-      displayScore(score);
-
-      // end game when score gets to 100
-      if (score == 100 || action == false) {
-        gameInProgress = endGame();
-        break; // Exit the game loop
-      }
-
-      // decrease action timer every 10 actions completed
-      if (score % 10 == 0 && score != 0) {
-        action_time_limit = action_time_limit - 100;
-      }
-
-     
-
-    }
-  }
-}
-
-// function to prompt new user action
-bool promptAction() {
-
-    // randomly generate a new action
-  String prompt = randomGenAction();
-  bool action = false;
-  if (prompt == "place it") {
-    // use speaker to prompt user
-    //speak("Place It");
-    lcd.print("place it");
-    delay(5000);
-      // read if photoresistor is covered or not
-    if (analogRead(A0) < 700) {
-       // photoresistor covered
-       photoresistor = true;
-     } else {
-       photoresistor = false;
-     }
-    if (photoresistor == true) {
-      action = true;
-    } else {
-      action = false;
-    }
-  } else if (prompt == "fry it") {
-    //speak("Fry It");
-    lcd.print("Fry It");
-    delay(5000);
-    if (accelerometer_y < -700 || accelerometer_y > -300) {
+      total_accel = sqrt((accelerometer_x*accelerometer_x)+(accelerometer_y*accelerometer_y)+(accelerometer_z*accelerometer_z));
+      delay(delay_time);
+    if (total_accel < 17000 || total_accel > 20000) {
       action = true;
     } else {
       action = false;
     }
   } else if (prompt == "cook it") {
-    // speak("Cook It");
+    lcd.setCursor(0, 1);
     lcd.print("Cook It");
-    delay(5000);
+    delay(delay_time);
     if (digitalRead(1) == LOW) {
       // hall sensor switched on
       action = true;
@@ -167,7 +171,7 @@ bool promptAction() {
 
 // function to randomly select a new action
 String randomGenAction() {
-  String options[] = { "cook it", "fry it", "place it"};
+  String options[] = {"fry it", "place it", "cook it"};
   const int numOptions = 3;
   int index = random(numOptions);
   return options[index];
@@ -176,18 +180,31 @@ String randomGenAction() {
 // display score at end of game function
 void displayScore(int score) {
   char score_string[3];
-  itoa(score, score_string, 3);
+  itoa(score, score_string, 10);
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("Player score: ");
-  lcd.setCursor(0,1);
+  lcd.print("Player score:");
   lcd.print(score_string);
 }
 
 bool endGame() {
   gameInProgress = false;
-  // speak("Game over");
   lcd.clear();
+  lcd.setCursor(0, 0);
   lcd.print("Game Over!");
+  lcd.setCursor(0, 1);
+  lcd.print("Final score:");
+  lcd.print(score);
+  // play two tones to indicate end of game
+  tone(speakerPin, 440);
+  delay(250);
+  noTone(speakerPin);
+  delay(100);
+
+  tone(speakerPin, 220);
+  delay(250);
+  noTone(speakerPin);
+  delay(100);
+
   return gameInProgress;
 }
